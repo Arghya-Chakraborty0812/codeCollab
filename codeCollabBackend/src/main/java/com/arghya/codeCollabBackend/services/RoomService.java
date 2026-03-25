@@ -14,21 +14,33 @@ public class RoomService {
     @Autowired
     RoomRepo roomRepo;
 
-    public ResponseEntity<?> createRoom(String roomId) {
-        if(roomRepo.findByRoomId(roomId) != null) {
-            return ResponseEntity.status(400).body("Room already exists");
+    public ResponseEntity<?> createRoom(String roomId, String username) {
+         // If room already exists, don't allow creating again
+         if (roomRepo.existsByRoomId(roomId)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Room '" + roomId + "' already exists. Use JOIN instead.");
         }
         Room room = new Room();
         room.setRoomId(roomId);
+        room.getMembers().add(username);
         roomRepo.save(room);
         return ResponseEntity.status(HttpStatus.CREATED).body(room);
     }
 
-    public ResponseEntity<?> getRoom(String roomId) {
+    public ResponseEntity<?> getRoom(String roomId, String username) {
         Room room = roomRepo.findByRoomId(roomId);
-        if(roomRepo.findByRoomId(roomId) == null) {
-            return ResponseEntity.status(404).body("Room not found");
+
+        // Room must exist to join
+        if (room == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Room '" + roomId + "' not found. Create it first.");
         }
+        if (!room.getMembers().contains(username)) {
+            room.getMembers().add(username);
+            // room.setUpdatedAt(LocalDateTime.now());
+            roomRepo.save(room);
+        }
+
         return ResponseEntity.ok(room);
     }
     

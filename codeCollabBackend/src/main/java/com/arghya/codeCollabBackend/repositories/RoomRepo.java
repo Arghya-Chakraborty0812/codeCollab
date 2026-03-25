@@ -6,4 +6,5 @@ import com.arghya.codeCollabBackend.entities.Room;
 
 public interface RoomRepo extends MongoRepository<Room, String>{
     Room findByRoomId(String roomId);
+    boolean existsByRoomId(String roomId);
 }
