@@ -43,7 +43,7 @@ export default function JoinRoom() {
   return (
     <div className="flex justify-center items-center h-screen w-full bg-[#0f172a]">
       {/* 1. This must be here for toasts to show up! */}
-      <Toaster position="top-center" />
+      
 
       <div className="w-6/12 h-4/6 bg-[#1f2937] border-8 border-gray-400 rounded-xl p-10 flex flex-col gap-7 items-center text-white">
         <div className="flex items-center gap-6 mb-6">

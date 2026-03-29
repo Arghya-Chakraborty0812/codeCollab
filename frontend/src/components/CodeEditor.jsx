@@ -1,16 +1,43 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import laptop from "../assets/Pi7_laptop.png";
+import { useLocation, useNavigate } from 'react-router';
+import httpClient from '../config/AxiosHelper';
 
 const LANGUAGES = ['C++', 'Python', 'JavaScript', 'Java', 'C', 'Go', 'Rust']
 
+
 export default function CodeEditor() {
+
+  const location  = useLocation();
+  const navigate = useNavigate();
+
   const [language, setLanguage] = useState('C++')
   const [code, setCode] = useState('')
   const [output, setOutput] = useState('')
   const [showLangMenu, setShowLangMenu] = useState(false)
+  const {roomId, username} = location.state || {}
 
-  const roomId = 'ROOM-4821'
-  const user = { name: 'Arghya Chakraborty', initial: 'A' }
+  const [members, setMembers] = useState([]);
+
+useEffect(() => {
+  if (!roomId || !username) {
+    // If roomId or username is missing, go back to login page
+    navigate('/');
+    return;
+  }
+
+  const fetchRoom = async() => {
+    try {
+      const response = await httpClient.get(`/api/v1/rooms/${roomId}`);
+      setMembers(response.data.members);
+    } catch (error) {
+      console.log("Error fetching room details:", error);
+    }
+  }
+  fetchRoom();
+}, [roomId, username, navigate]);
+
+  
 
   const handleRun = () => {
     setOutput(`> Running ${language} code...\n\nHello, World!`)
@@ -86,14 +113,16 @@ export default function CodeEditor() {
               <span className="text-white font-bold tracking-wide text-sm">CODE COLLAB</span>
             </div>
 
-            {/* Users */}
-            <div className="flex-1">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-md bg-green-600 flex items-center justify-center text-white text-sm font-bold">
-                  {user.initial}
+            {/* Users List */}
+            <div className="flex-1 space-y-3">
+              {members.map((member, idx) => (
+                <div key={idx} className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-md bg-green-600 flex items-center justify-center text-white text-sm font-bold">
+                    {member[0].toUpperCase()}
+                  </div>
+                  <span className="text-white text-sm">{member}</span>
                 </div>
-                <span className="text-white text-sm">{user.name}</span>
-              </div>
+              ))}
             </div>
 
             {/* Leave Room */}

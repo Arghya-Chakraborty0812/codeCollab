@@ -27,7 +27,7 @@ public class RoomService {
         return ResponseEntity.status(HttpStatus.CREATED).body(room);
     }
 
-    public ResponseEntity<?> getRoom(String roomId, String username) {
+    public ResponseEntity<?> joinRoom(String roomId, String username) {
         Room room = roomRepo.findByRoomId(roomId);
 
         // Room must exist to join
@@ -41,6 +41,15 @@ public class RoomService {
             roomRepo.save(room);
         }
 
+        return ResponseEntity.ok(room);
+    }
+
+    public ResponseEntity<?> getRoom(String roomId) {
+        Room room = roomRepo.findByRoomId(roomId);
+        if (room == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Room '" + roomId + "' not found.");
+        }
         return ResponseEntity.ok(room);
     }
     
