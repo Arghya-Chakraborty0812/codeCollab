@@ -113,17 +113,35 @@ useEffect(() => {
               <span className="text-white font-bold tracking-wide text-sm">CODE COLLAB</span>
             </div>
 
-            {/* Users List */}
-            <div className="flex-1 space-y-3">
-              {members.map((member, idx) => (
-                <div key={idx} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-md bg-green-600 flex items-center justify-center text-white text-sm font-bold">
-                    {member[0].toUpperCase()}
-                  </div>
-                  <span className="text-white text-sm">{member}</span>
-                </div>
-              ))}
-            </div>
+           {/* Users List */}
+<div className="flex-1 space-y-3">
+  {members.map((member, idx) => {
+    const isCurrentUser = member === username;
+
+    return (
+      <div
+        key={idx}
+        className={`flex items-center gap-3 px-2 py-1 rounded-md transition
+          ${isCurrentUser ? 'bg-[#2a3f5f]' : 'hover:bg-[#22314a]'}`}
+      >
+        <div
+          className={`w-8 h-8 rounded-md flex items-center justify-center text-white text-sm font-bold
+            ${isCurrentUser ? 'bg-yellow-500' : 'bg-green-600'}`}
+        >
+          {member[0].toUpperCase()}
+        </div>
+
+        <span
+          className={`text-sm ${
+            isCurrentUser ? 'text-yellow-300 font-semibold' : 'text-white'
+          }`}
+        >
+          {member} {isCurrentUser && '(You)'}
+        </span>
+      </div>
+    );
+  })}
+</div>
 
             {/* Leave Room */}
             <div className="border-t border-[#2a3a55] pt-4">
