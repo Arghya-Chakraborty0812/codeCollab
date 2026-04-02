@@ -7,6 +7,7 @@ import App from './App.jsx'
 import AppRoutes from './config/Routes.jsx'
 import { Toaster } from 'react-hot-toast'
 
+
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
     {/* GLOBAL TOASTER */}

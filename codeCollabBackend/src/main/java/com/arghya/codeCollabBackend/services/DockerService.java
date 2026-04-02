@@ -84,6 +84,15 @@ public class DockerService {
 
         Files.deleteIfExists(tempFile);
 
-        return "OUTPUT:\n" + result + "\nERROR:\n" + err;
+        String cleanOutput = result
+        .replaceAll("(?m)^.*copy_reference_file\\.log.*\\n?", "")
+        .trim();
+
+        String cleanError = err
+        .replaceAll("(?m)^.*copy_reference_file\\.log.*\\n?", "")
+        .replaceAll("(?m)^.*Permission denied.*\\n?", "")
+        .trim();
+
+        return !cleanOutput.isEmpty() ? cleanOutput : cleanError;
     }
 }

@@ -1,47 +1,129 @@
+
 import React, { useEffect, useState } from 'react'
 import laptop from "../assets/Pi7_laptop.png";
 import { useLocation, useNavigate } from 'react-router';
 import httpClient from '../config/AxiosHelper';
+import SockJS from "sockjs-client";
+import { Stomp } from "@stomp/stompjs";
+import { useRef } from "react";
+import { Client } from "@stomp/stompjs"; // ✅ instead of Stomp
 
 const LANGUAGES = ['C++', 'Python', 'JavaScript', 'Java', 'C', 'Go', 'Rust']
+
+const LANGUAGE_MAP = {
+  "C++": "cpp",
+  "Python": "python",
+  "JavaScript": "javascript",
+  "Java": "java",
+  "C": "c",
+  "Go": "go",
+  "Rust": "rust"
+}
 
 
 export default function CodeEditor() {
 
   const location  = useLocation();
   const navigate = useNavigate();
+  const stompClient = useRef(null);
+  const debounceTimer = useRef(null);
 
   const [language, setLanguage] = useState('C++')
   const [code, setCode] = useState('')
   const [output, setOutput] = useState('')
   const [showLangMenu, setShowLangMenu] = useState(false)
   const {roomId, username} = location.state || {}
+  const [input, setInput] = useState('')
 
   const [members, setMembers] = useState([]);
 
+// ✅ PUT IT HERE
+const fetchRoom = async () => {
+  try {
+    const response = await httpClient.get(`/api/v1/rooms/${roomId}`);
+    setMembers(response.data.members);
+  } catch (error) {
+    console.error("Error fetching room:", error);
+  }
+};
+
+// 🔥 WEBSOCKET CONNECTION
 useEffect(() => {
+
   if (!roomId || !username) {
-    // If roomId or username is missing, go back to login page
     navigate('/');
     return;
   }
 
-  const fetchRoom = async() => {
-    try {
-      const response = await httpClient.get(`/api/v1/rooms/${roomId}`);
-      setMembers(response.data.members);
-    } catch (error) {
-      console.log("Error fetching room details:", error);
-    }
-  }
   fetchRoom();
+
+  const client = new Client({
+    webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+    reconnectDelay: 5000,
+  });
+
+  client.onConnect = () => {
+    console.log("Connected");
+
+    client.subscribe(`/topic/code/${roomId}`, (message) => {
+      const data = JSON.parse(message.body);
+
+      if (data.username !== username) {
+        setCode(data.code);
+      }
+    });
+  };
+
+  client.activate();
+  stompClient.current = client;
+
+  return () => {
+    if (stompClient.current) {
+      stompClient.current.deactivate();
+    }
+  };
+
 }, [roomId, username, navigate]);
+
+const sendCode = (newCode) => {
+
+  if (debounceTimer.current) {
+    clearTimeout(debounceTimer.current);
+  }
+
+  debounceTimer.current = setTimeout(() => {
+    if (stompClient.current && stompClient.current.connected) {
+      stompClient.current.publish({
+        destination: "/app/code",
+        body: JSON.stringify({
+          roomId,
+          code: newCode,
+          username
+        })
+      });
+    }
+  }, 300); // debounce
+};
 
   
 
-  const handleRun = () => {
-    setOutput(`> Running ${language} code...\n\nHello, World!`)
+const handleRun = async () => {
+  try {
+    setOutput("> Running...\n");
+
+    const response = await httpClient.post('/api/v1/run', {
+      language: LANGUAGE_MAP[language],
+      code: code,
+      input: input + "\n"   // 🔥 IMPORTANT
+    });
+
+    setOutput(response.data);
+
+  } catch (error) {
+    console.error(error);
+    setOutput("Error running code");
   }
+};
 
   const handleClear = () => {
     setCode('')
@@ -157,21 +239,36 @@ useEffect(() => {
             <div className="flex-1 border-r border-[#243048]">
               <textarea
                 value={code}
-                onChange={e => setCode(e.target.value)}
+                onChange={(e) => {
+                  setCode(e.target.value);
+                  sendCode(e.target.value);
+                }}
                 placeholder={`// Write your ${language} code here...`}
                 className="w-full h-full bg-[#1a2235] text-green-300 text-sm p-4 resize-none outline-none placeholder-gray-600 leading-relaxed"
                 spellCheck={false}
               />
             </div>
 
-            {/* Output Panel */}
             <div className="w-96 flex flex-col">
-              <div className="px-4 py-2 text-xs text-gray-400 tracking-widest uppercase border-b border-[#243048]">
-                Output :
-              </div>
-              <div className="flex-1 p-4 text-sm text-gray-300 whitespace-pre-wrap overflow-auto">
-                {output || ''}
-              </div>
+
+            {/* INPUT BOX 🔥 */}
+            <div className="px-4 py-2 text-xs text-gray-400 border-b border-[#243048]">
+              Input:
+            </div>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Enter input here..."
+              className="h-24 bg-[#111827] text-white text-sm p-2 outline-none resize-none border-b border-[#243048]"
+            />
+
+            {/* OUTPUT */}
+            <div className="px-4 py-2 text-xs text-gray-400 tracking-widest uppercase border-b border-[#243048]">
+              Output :
+            </div>
+            <div className="flex-1 p-4 text-sm text-gray-300 whitespace-pre-wrap overflow-auto">
+              {output || ''}
+            </div>
             </div>
           </div>
         </div>
