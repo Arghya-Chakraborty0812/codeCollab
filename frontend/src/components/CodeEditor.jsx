@@ -47,6 +47,15 @@ const fetchRoom = async () => {
   }
 };
 
+const fetchCode = async () => {
+  try {
+    const res = await httpClient.get(`/api/v1/code/${roomId}`);
+    setCode(res.data);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 // 🔥 WEBSOCKET CONNECTION
 useEffect(() => {
 
@@ -56,6 +65,7 @@ useEffect(() => {
   }
 
   fetchRoom();
+  fetchCode();
 
   const client = new Client({
     webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
@@ -63,16 +73,23 @@ useEffect(() => {
   });
 
   client.onConnect = () => {
-    console.log("Connected");
+  console.log("Connected");
 
-    client.subscribe(`/topic/code/${roomId}`, (message) => {
-      const data = JSON.parse(message.body);
+  // ✅ CODE SYNC (already there)
+  client.subscribe(`/topic/code/${roomId}`, (message) => {
+    const data = JSON.parse(message.body);
 
-      if (data.username !== username) {
-        setCode(data.code);
-      }
-    });
-  };
+    if (data.username !== username) {
+      setCode(data.code);
+    }
+  });
+
+  // 🔥 ADD THIS (OUTPUT SYNC)
+  client.subscribe(`/topic/output/${roomId}`, (message) => {
+    const data = JSON.parse(message.body);
+    setOutput(data.output);
+  });
+};
 
   client.activate();
   stompClient.current = client;
@@ -114,10 +131,12 @@ const handleRun = async () => {
     const response = await httpClient.post('/api/v1/run', {
       language: LANGUAGE_MAP[language],
       code: code,
-      input: input + "\n"   // 🔥 IMPORTANT
+      input: input + "\n",
+      roomId: roomId // 🔥 ADD THIS
     });
 
-    setOutput(response.data);
+    // ❌ REMOVE THIS LINE (important)
+    // setOutput(response.data);
 
   } catch (error) {
     console.error(error);
@@ -129,6 +148,8 @@ const handleRun = async () => {
     setCode('')
     setOutput('')
   }
+
+  
 
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6 font-mono">
