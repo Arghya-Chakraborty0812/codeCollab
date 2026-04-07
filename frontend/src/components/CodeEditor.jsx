@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router';
 import httpClient from '../config/AxiosHelper';
 import SockJS from "sockjs-client";
 import { Stomp } from "@stomp/stompjs";
+import Editor from "@monaco-editor/react";
 import { useRef } from "react";
 import { Client } from "@stomp/stompjs"; // ✅ instead of Stomp
 
@@ -149,10 +150,20 @@ const handleRun = async () => {
     setOutput('')
   }
 
+  const handleLeaveRoom = () => {
+    if(stompClient.current){
+      stompClient.current.deactivate();
+
+    }
+    setCode('');
+    setOutput('');
+    navigate('/');
+  }
+
   
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6 font-mono">
+    <div className="h-screen bg-gray-900 flex flex-col md:items-center md:justify-center md:p-6 font-mono">
       <div className="w-full max-w-6xl bg-[#1a2235] rounded-xl overflow-hidden shadow-2xl border border-[#243048]">
 
         {/* Top Bar */}
@@ -189,7 +200,7 @@ const handleRun = async () => {
           </div>
 
           {/* Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleClear}
               className="px-4 py-1.5 text-sm font-semibold text-white bg-[#1e6fa8] hover:bg-[#1a5f90] rounded-md transition"
@@ -206,10 +217,10 @@ const handleRun = async () => {
         </div>
 
         {/* Main Layout */}
-        <div className="flex" style={{ height: '600px' }}>
+        <div className="flex flex-col md:flex-row h-full">
 
           {/* Sidebar */}
-          <div className="w-64 bg-[#1a2235] border-r border-[#243048] flex flex-col p-4">
+          <div className="w-full md:w-64 bg-[#1a2235] border-b md:border-b-0 md:border-r border-[#243048] flex flex-col p-3 md:p-4">
             {/* Logo */}
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#2a3a55]">
                 <img src={laptop} alt="logo" className="w-10 text-white h-9" />
@@ -217,7 +228,7 @@ const handleRun = async () => {
             </div>
 
            {/* Users List */}
-<div className="flex-1 space-y-3">
+           <div className="flex-1 space-y-2 max-h-32 md:max-h-full overflow-y-auto">
   {members.map((member, idx) => {
     const isCurrentUser = member === username;
 
@@ -248,29 +259,36 @@ const handleRun = async () => {
 
             {/* Leave Room */}
             <div className="border-t border-[#2a3a55] pt-4">
-              <button className="px-3 py-1.5 bg-red-700 hover:bg-red-800 text-white text-xs font-semibold rounded transition">
+              <button  onClick={handleLeaveRoom} className="px-3 py-1.5 bg-red-700 hover:bg-red-800 text-white text-xs font-semibold rounded transition">
                 LEAVE ROOM
               </button>
             </div>
           </div>
 
           {/* Editor + Output */}
-          <div className="flex flex-1">
+          <div className="flex flex-col md:flex-row flex-1">
             {/* Code Editor */}
-            <div className="flex-1 border-r border-[#243048]">
-              <textarea
-                value={code}
-                onChange={(e) => {
-                  setCode(e.target.value);
-                  sendCode(e.target.value);
-                }}
-                placeholder={`// Write your ${language} code here...`}
-                className="w-full h-full bg-[#1a2235] text-green-300 text-sm p-4 resize-none outline-none placeholder-gray-600 leading-relaxed"
-                spellCheck={false}
-              />
+            <div className="h-[50vh] md:h-auto flex-1 border-b md:border-b-0 md:border-r border-[#243048]">
+              <Editor
+                  height="100%"
+                  theme="vs-dark"
+                  language={LANGUAGE_MAP[language]} // 🔥 dynamic language
+                  value={code}
+                  onChange={(value) => {
+                    setCode(value);
+                    sendCode(value);
+                  }}
+                  options={{
+                    fontSize: 14,
+                    minimap: { enabled: false },
+                    automaticLayout: true,
+                    formatOnType: true,
+                    formatOnPaste: true,
+                  }}
+                />
             </div>
 
-            <div className="w-96 flex flex-col">
+            <div className="w-full md:w-96 h-[40vh] md:h-auto flex flex-col">
 
             {/* INPUT BOX 🔥 */}
             <div className="px-4 py-2 text-xs text-gray-400 border-b border-[#243048]">
