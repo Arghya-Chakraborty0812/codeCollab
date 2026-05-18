@@ -35,6 +35,7 @@ export default function CodeEditor() {
   const [showLangMenu, setShowLangMenu] = useState(false)
   const {roomId, username} = location.state || {}
   const [input, setInput] = useState('')
+  const[version, setVersion] = useState(0);
 
   const [members, setMembers] = useState([]);
 
@@ -51,7 +52,8 @@ const fetchRoom = async () => {
 const fetchCode = async () => {
   try {
     const res = await httpClient.get(`/api/v1/code/${roomId}`);
-    setCode(res.data);
+    setCode(res.data.code);
+    setVersion(res.data.version || 0); // ✅ important
   } catch (err) {
     console.error(err);
   }
@@ -79,9 +81,15 @@ useEffect(() => {
   // ✅ CODE SYNC (already there)
   client.subscribe(`/topic/code/${roomId}`, (message) => {
     const data = JSON.parse(message.body);
-
+  
     if (data.username !== username) {
-      setCode(data.code);
+      setVersion(prevVersion => {
+        if (data.version > prevVersion) {
+          setCode(data.code);
+          return data.version;
+        }
+        return prevVersion; // ❌ ignore old updates
+      });
     }
   });
 
@@ -110,17 +118,26 @@ const sendCode = (newCode) => {
   }
 
   debounceTimer.current = setTimeout(() => {
-    if (stompClient.current && stompClient.current.connected) {
-      stompClient.current.publish({
-        destination: "/app/code",
-        body: JSON.stringify({
-          roomId,
-          code: newCode,
-          username
-        })
-      });
-    }
-  }, 300); // debounce
+
+    setVersion(prevVersion => {
+      const newVersion = prevVersion + 1;
+
+      if (stompClient.current && stompClient.current.connected) {
+        stompClient.current.publish({
+          destination: "/app/code",
+          body: JSON.stringify({
+            roomId,
+            code: newCode,
+            username,
+            version: newVersion   // ✅ send version
+          })
+        });
+      }
+
+      return newVersion;
+    });
+
+  }, 300);
 };
 
   

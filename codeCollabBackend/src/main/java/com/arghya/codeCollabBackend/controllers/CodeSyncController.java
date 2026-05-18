@@ -22,27 +22,37 @@ public class CodeSyncController {
     private SimpMessagingTemplate messagingTemplate;
 
     // ✅ STORE CODE PER ROOM
-    private final ConcurrentHashMap<String, String> roomCodeMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CodeMessage> roomStateMap = new ConcurrentHashMap<>();
 
     // 🔥 REAL-TIME SYNC
     @MessageMapping("/code")
-    public void syncCode(CodeMessage message) {
+public void syncCode(CodeMessage message) {
 
-        System.out.println("Received: " + message.getCode());
+    String roomId = message.getRoomId();
 
-        // ✅ SAVE CODE
-        roomCodeMap.put(message.getRoomId(), message.getCode());
+    CodeMessage current = roomStateMap.get(roomId);
 
-        // ✅ BROADCAST
+    // ✅ If no data exists → accept
+    if (current == null || message.getVersion() > current.getVersion()) {
+
+        // ✅ Save latest
+        roomStateMap.put(roomId, message);
+
+        // ✅ Broadcast
         messagingTemplate.convertAndSend(
-            "/topic/code/" + message.getRoomId(),
+            "/topic/code/" + roomId,
             message
         );
     }
+    // ❌ Ignore older updates
+}
 
     // 🔥 FETCH CODE ON LOAD
     @GetMapping("/{roomId}")
-    public String getCode(@PathVariable String roomId) {
-        return roomCodeMap.getOrDefault(roomId, "");
+    public CodeMessage getCode(@PathVariable String roomId) {
+        return roomStateMap.getOrDefault(
+            roomId,
+            new CodeMessage(roomId, "", "", "", 0)
+        );
     }
 }
