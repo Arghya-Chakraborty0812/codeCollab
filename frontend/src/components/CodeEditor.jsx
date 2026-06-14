@@ -53,6 +53,7 @@ const fetchCode = async () => {
   try {
     const res = await httpClient.get(`/api/v1/code/${roomId}`);
     setCode(res.data.code);
+    setInput(res.data.input || ''); // 🔥 ADD THIS
     setVersion(res.data.version || 0); // ✅ important
   } catch (err) {
     console.error(err);
@@ -86,6 +87,7 @@ useEffect(() => {
       setVersion(prevVersion => {
         if (data.version > prevVersion) {
           setCode(data.code);
+          setInput(data.input || ''); // 🔥 ADD THIS
           return data.version;
         }
         return prevVersion; // ❌ ignore old updates
@@ -111,7 +113,7 @@ useEffect(() => {
 
 }, [roomId, username, navigate]);
 
-const sendCode = (newCode) => {
+const sendCode = (newCode, newInput = input) => {
 
   if (debounceTimer.current) {
     clearTimeout(debounceTimer.current);
@@ -128,6 +130,7 @@ const sendCode = (newCode) => {
           body: JSON.stringify({
             roomId,
             code: newCode,
+            input: newInput, // 🔥 send input
             username,
             version: newVersion   // ✅ send version
           })
@@ -149,7 +152,7 @@ const handleRun = async () => {
     const response = await httpClient.post('/api/v1/run', {
       language: LANGUAGE_MAP[language],
       code: code,
-      input: input + "\n",
+      input: input,
       roomId: roomId // 🔥 ADD THIS
     });
 
@@ -313,9 +316,13 @@ const handleRun = async () => {
             </div>
             <textarea
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Enter input here..."
+              onChange={(e) => {
+                const newInput = e.target.value;
+                setInput(newInput);
+                sendCode(code, newInput); // 🔥 sync input too
+              }}
               className="h-24 bg-[#111827] text-white text-sm p-2 outline-none resize-none border-b border-[#243048]"
+              placeholder="Enter input here..."
             />
 
             {/* OUTPUT */}

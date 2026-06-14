@@ -10,8 +10,10 @@ import lombok.NoArgsConstructor;
 public class CodeMessage {
     private String roomId;
     private String code;
+    private String input;
     private String username;
     private String output;
+    // private String language;
 
     private int version;
 }

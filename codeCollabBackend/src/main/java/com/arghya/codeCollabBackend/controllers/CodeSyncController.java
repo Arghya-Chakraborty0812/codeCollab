@@ -26,33 +26,30 @@ public class CodeSyncController {
 
     // 🔥 REAL-TIME SYNC
     @MessageMapping("/code")
-public void syncCode(CodeMessage message) {
+    public void syncCode(CodeMessage message) {
 
-    String roomId = message.getRoomId();
+        String roomId = message.getRoomId();
+        CodeMessage current = roomStateMap.get(roomId);
 
-    CodeMessage current = roomStateMap.get(roomId);
-
-    // ✅ If no data exists → accept
-    if (current == null || message.getVersion() > current.getVersion()) {
-
-        // ✅ Save latest
-        roomStateMap.put(roomId, message);
-
-        // ✅ Broadcast
-        messagingTemplate.convertAndSend(
-            "/topic/code/" + roomId,
-            message
-        );
+        // ✅ If no data exists → accept
+        if (current == null || message.getVersion() > current.getVersion()) {
+            // ✅ Save latest
+            roomStateMap.put(roomId, message);
+            // ✅ Broadcast
+            messagingTemplate.convertAndSend(
+                "/topic/code/" + roomId,
+                message
+            );
+        }
+        // ❌ Ignore older updates
     }
-    // ❌ Ignore older updates
-}
 
     // 🔥 FETCH CODE ON LOAD
     @GetMapping("/{roomId}")
     public CodeMessage getCode(@PathVariable String roomId) {
         return roomStateMap.getOrDefault(
             roomId,
-            new CodeMessage(roomId, "", "", "", 0)
+            new CodeMessage(roomId, "","", "", "", 0)
         );
     }
 }

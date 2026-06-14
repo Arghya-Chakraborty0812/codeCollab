@@ -21,6 +21,7 @@ public class Room {
     private String roomId;  //custom room id
     private String language;
     private String code;
+    private String input;
     private List<String> members = new ArrayList<>();
     private LocalDate createdAt = LocalDate.now();
     private LocalDate updatedAt = LocalDate.now();
