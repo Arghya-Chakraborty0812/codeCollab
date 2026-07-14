@@ -2,6 +2,7 @@ package com.arghya.codeCollabBackend.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,12 +23,12 @@ public class RoomController {
     RoomService roomService;
     
     @PostMapping("/create")
-    public ResponseEntity<?> createRoom(@RequestBody CreateRoomRequest createRoomRequest) {
-        return roomService.createRoom(createRoomRequest.getRoomId(), createRoomRequest.getUsername());
+    public ResponseEntity<?> createRoom(@RequestBody CreateRoomRequest req, Authentication auth) {
+        return roomService.createRoom(req.getRoomId(), auth.getName());
     }
 
     @PostMapping("/join")
-    public ResponseEntity<?> joinRoom(@RequestBody CreateRoomRequest createRoomRequest) {
+    public ResponseEntity<?> joinRoom(@RequestBody CreateRoomRequest createRoomRequest, Authentication auth) {
         return roomService.joinRoom(createRoomRequest.getRoomId(), createRoomRequest.getUsername());
     }
 

@@ -73,11 +73,20 @@ useEffect(() => {
 
   const client = new Client({
     webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+    connectHeaders: {
+      Authorization: `Bearer ${localStorage.getItem('token')}`,
+    },
     reconnectDelay: 5000,
   });
 
   client.onConnect = () => {
   console.log("Connected");
+
+  // 🔥 handle rejected connections (bad/expired token)
+  client.onStompError = (frame) => {
+    console.error("STOMP error:", frame.headers['message']);
+    navigate('/login');
+  };
 
   // ✅ CODE SYNC (already there)
   client.subscribe(`/topic/code/${roomId}`, (message) => {

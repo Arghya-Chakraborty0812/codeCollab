@@ -13,26 +13,24 @@ export default function JoinRoom() {
   } = useForm();
 
   const navigate = useNavigate();
+  const username = localStorage.getItem("username");
 
   const handleAction = async (data, actionType) => {
     const loadingToast = toast.loading(`${actionType === "CREATE" ? "Creating" : "Joining"} room...`);
-    
+
     try {
       const endpoint = actionType === "CREATE" ? "/api/v1/rooms/create" : "/api/v1/rooms/join";
-      
-      // The actual API call
-      const response = await httpClient.post(endpoint, data);
-      
+
+      // The actual API call — username now comes from the logged-in account, not the form
+      const response = await httpClient.post(endpoint, { roomId: data.roomId, username });
+
       toast.success(`Welcome to ${data.roomId}!`, { id: loadingToast });
-      navigate('/code', 
-        { 
-          state: { roomId: data.roomId, username: data.username } 
+      navigate('/code',
+        {
+          state: { roomId: data.roomId, username }
         });
       console.log("Server Response:", response.data);
 
-      // Next step: redirect to the editor page
-      // navigate(`/room/${data.roomId}`);
-      
     } catch (error) {
       console.error(error);
       const errorMessage = error.response?.data || "Server is offline or unreachable";
@@ -40,10 +38,15 @@ export default function JoinRoom() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/login');
+  };
+
   return (
     <div className="flex justify-center items-center h-screen w-full bg-[#0f172a]">
       {/* 1. This must be here for toasts to show up! */}
-      
+      <Toaster />
 
       <div className="w-6/12 h-4/6 bg-[#1f2937] border-8 border-gray-400 rounded-xl p-10 flex flex-col gap-7 items-center text-white">
         <div className="flex items-center gap-6 mb-6">
@@ -53,6 +56,18 @@ export default function JoinRoom() {
         </div>
 
         <h2 className="text-2xl font-normal">Enter the ROOM ID</h2>
+
+        {/* Logged-in-as bar */}
+        <div className="w-full flex justify-between items-center text-sm text-gray-400">
+          <span>Logged in as <span className="text-white font-semibold">{username}</span></span>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="text-red-400 hover:underline"
+          >
+            Log out
+          </button>
+        </div>
 
         {/* Inputs */}
         <div className="w-full flex flex-col gap-1">
@@ -69,19 +84,6 @@ export default function JoinRoom() {
                 })}
             />
             {errors.roomId && <span className="text-red-400 text-sm">{errors.roomId.message}</span>}
-        </div>
-
-        <div className="w-full flex flex-col gap-1">
-            <input
-                type="text"
-                placeholder="USERNAME"
-                className="w-full p-3 rounded-md text-black outline-none"
-                {...register("username", {
-                    required: "Username is required",
-                    minLength: { value: 3, message: "Min 3 characters" }
-                })}
-            />
-            {errors.username && <span className="text-red-400 text-sm">{errors.username.message}</span>}
         </div>
 
         <div className="flex gap-4">
