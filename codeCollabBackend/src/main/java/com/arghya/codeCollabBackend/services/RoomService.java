@@ -52,5 +52,18 @@ public class RoomService {
         }
         return ResponseEntity.ok(room);
     }
+
+    public ResponseEntity<?> leaveRoom(String roomId, String username) {
+        Room room = roomRepo.findByRoomId(roomId);
+        if (room == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Room '" + roomId + "' not found.");
+        }
+        if (room.getMembers().contains(username)) {
+            room.getMembers().remove(username);
+            roomRepo.save(room);
+        }
+        return ResponseEntity.ok(room);
+    }
     
 }

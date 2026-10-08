@@ -179,15 +179,23 @@ const handleRun = async () => {
     setOutput('')
   }
 
-  const handleLeaveRoom = () => {
-    if(stompClient.current){
-      stompClient.current.deactivate();
-
+  const handleLeaveRoom = async () => {
+    try {
+      await httpClient.post('/api/v1/rooms/leave', {
+        roomId,
+        username
+      });
+      if (stompClient.current) {
+        stompClient.current.deactivate();
+      }
+      setCode('');
+      setOutput('');
+      navigate('/');
+  
+    } catch (error) {
+      console.error("Error leaving room:", error);
     }
-    setCode('');
-    setOutput('');
-    navigate('/');
-  }
+  };
 
   
 
@@ -230,6 +238,12 @@ const handleRun = async () => {
 
           {/* Buttons */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Leave Room */}
+            {/* <div className="border-t border-[#2a3a55] pt-4"> */}
+              <button  onClick={handleLeaveRoom} className="px-3 py-1.5 bg-red-700 hover:bg-red-800 text-white text-xs font-semibold rounded transition">
+                LEAVE ROOM
+              </button>
+            {/* </div> */}
             <button
               onClick={handleClear}
               className="px-4 py-1.5 text-sm font-semibold text-white bg-[#1e6fa8] hover:bg-[#1a5f90] rounded-md transition"
@@ -249,7 +263,7 @@ const handleRun = async () => {
         <div className="flex flex-col md:flex-row h-full">
 
           {/* Sidebar */}
-          <div className="w-full md:w-64 bg-[#1a2235] border-b md:border-b-0 md:border-r border-[#243048] flex flex-col p-3 md:p-4">
+          <div className="w-full md:w-64 bg-[#1a2235] border-b md:border-b-0 md:border-r border-[#243048] flex flex-col p-3 md:p-4 overflow-hidden">
             {/* Logo */}
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#2a3a55]">
                 <img src={laptop} alt="logo" className="w-10 text-white h-9" />
@@ -257,7 +271,7 @@ const handleRun = async () => {
             </div>
 
            {/* Users List */}
-           <div className="flex-1 space-y-2 max-h-32 md:max-h-full overflow-y-auto">
+           <div className="flex-1 min-h-0 space-y-2 overflow-y-auto">
   {members.map((member, idx) => {
     const isCurrentUser = member === username;
 
@@ -286,12 +300,7 @@ const handleRun = async () => {
   })}
 </div>
 
-            {/* Leave Room */}
-            <div className="border-t border-[#2a3a55] pt-4">
-              <button  onClick={handleLeaveRoom} className="px-3 py-1.5 bg-red-700 hover:bg-red-800 text-white text-xs font-semibold rounded transition">
-                LEAVE ROOM
-              </button>
-            </div>
+            
           </div>
 
           {/* Editor + Output */}

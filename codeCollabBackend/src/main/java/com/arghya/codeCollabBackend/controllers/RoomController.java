@@ -32,9 +32,16 @@ public class RoomController {
         return roomService.joinRoom(createRoomRequest.getRoomId(), createRoomRequest.getUsername());
     }
 
+    @PostMapping("/leave")
+    public ResponseEntity<?> leaveRoom(@RequestBody CreateRoomRequest createRoomRequest, Authentication auth) {
+        return roomService.leaveRoom(createRoomRequest.getRoomId(), auth.getName());
+    }
+
     @GetMapping("{roomId}")
     public ResponseEntity<?> getRoomById(@PathVariable String roomId) {
         return roomService.getRoom(roomId);
     }
+
+
 
 }
